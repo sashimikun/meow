@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Dashboard</h1>
+    <p>Your API Key: {{ api_key }}</p>
+    <p>Monthly Usage: {{ usage_count }} / 100 screenshots</p>
+
+    <h2>API Usage Instructions:</h2>
+    <p>To take a screenshot, make a GET request to the following URL:</p>
+    <code>/api/take?url=&lt;URL_TO_CAPTURE&gt;&access_key=&lt;YOUR_API_KEY&gt;</code>
+    <p>Replace <code>&lt;URL_TO_CAPTURE&gt;</code> with the website URL you want to capture and <code>&lt;YOUR_API_KEY&gt;</code> with your actual API key.</p>
+
+    <a href="/signout">Sign Out</a>
+</body>
+</html>
