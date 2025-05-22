@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-screenshotone_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432" # For local inspection/debugging
+
+  redis:
+    image: redis:6-alpine
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    volumes:
+      - ./:/app # Mount code for local development
+      - screenshots_volume:/app/screenshots_output # Shared volume for screenshots
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db/${POSTGRES_DB:-screenshotone_db}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-a_very_secret_key_for_dev}
+      FLASK_APP: main:app # Already set in Dockerfile.web, but can be overridden
+      SCREENSHOT_OUTPUT_DIR: /app/screenshots_output
+      PYTHONUNBUFFERED: 1 # Already set in Dockerfile.web
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    volumes:
+      - ./:/app # Mount code for local development
+      - screenshots_volume:/app/screenshots_output # Shared volume for screenshots
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-user}:${POSTGRES_PASSWORD:-password}@db/${POSTGRES_DB:-screenshotone_db}
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-a_very_secret_key_for_dev}
+      SCREENSHOT_OUTPUT_DIR: /app/screenshots_output
+      PYTHONUNBUFFERED: 1 # Already set in Dockerfile.worker
+    depends_on:
+      - db
+      - redis
+
+volumes:
+  postgres_data: {}
+  screenshots_volume: {}

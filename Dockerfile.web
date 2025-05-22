@@ -1,0 +1,53 @@
+# Base image
+FROM python:3.10-slim-bullseye
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV FLASK_APP=main:app
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+# First, update and install curl and other basic tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    # Dependencies for Playwright, obtained via `python -m playwright print-deps`
+    # This list might need adjustment based on the exact base image and Playwright version
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libatspi2.0-0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libxshmfence1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir gunicorn # Install Gunicorn
+
+# Install Playwright browsers and their OS dependencies
+# Using --with-deps should handle OS dependencies for browsers.
+RUN python -m playwright install --with-deps chromium
+
+# Copy the rest of the application code
+COPY . /app/
+
+# Expose the port the app runs on
+EXPOSE 8000
+
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "main:app", "--timeout", "120", "--workers", "2"]
